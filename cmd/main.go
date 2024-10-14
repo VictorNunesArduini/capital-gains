@@ -12,17 +12,6 @@ import (
 	"strconv"
 )
 
-//
-//nova-média-ponderada = ((quantidade-de-ações-atual * média-ponderada-atual) + (quantidade-de-ações-compradas * valor-de-compra)) / (quantidade-de-ações-atual + quantidade-de-ações-compradas)
-//
-
-// desafios encontrados: 
-// como lidar com floats para valores financeiros?
-// utilizar env vars - ok
-// pensar em uma estrutura que suporte mais de uma ação e manter o stockWallet para ela - ok
-// json identation - ok
-
-
 type Operation struct {
 	Stock string `json:"stock, omitempty"`
 	Action string `json:"operation"`
@@ -45,12 +34,19 @@ var stock map[string]*stockWallet
 var profitPercentage float64 = 0.20
 var maxSellOperationValue float64 = 20000.0
 
+const (
+	operationBuy = "buy"
+	operationSell = "sell"
+	windowsOs = "windows"
+	linuxOs = "linux"
+	macosOs = "darwin"
+)
+
 
 func init()	{
 
 	if envValue := os.Getenv("PROFIT_PERCENTAGE"); envValue != "" {
 		profitPercentage, _ = strconv.ParseFloat(envValue, 64)
-		fmt.Printf("profit percentage: %f\n", profitPercentage)
 	}
 
 	if envValue := os.Getenv("MAX_SELL_OPERATION_VALUE"); envValue != "" {
@@ -75,18 +71,17 @@ func main()  {
 
 			var taxValue float64 = 0.0
 
-			if operation.Action == "buy" {
+			if operation.Action == operationBuy {
 
 				if _, ok := stock[operation.Stock]; !ok {
 					stock[operation.Stock] = &stockWallet{}
 				}
 
 				operation.buy(stock[operation.Stock])
-			} else if operation.Action == "sell" {
+			} else if operation.Action == operationSell {
 				
 				if _, ok := stock[operation.Stock]; !ok {
-					fmt.Errorf("we can't sell this inexistent stock: %s", operation.Stock)
-					os.Exit(1)
+					checkError(fmt.Sprintf("we can't sell this inexistent stock: %s", operation.Stock))
 				}
 
 				taxValue = operation.sell(stock[operation.Stock])
@@ -113,9 +108,9 @@ func readStdin(reader *bufio.Reader) string {
 
 func newLineByOs() string {
 
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == windowsOs {
 		return "\r\n"
-	} else if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+	} else if runtime.GOOS == linuxOs || runtime.GOOS == macosOs {
 		return "\n"
 	}
 
@@ -144,14 +139,17 @@ func stringfyJson(taxes []Tax) string {
 	jsonTaxes, err := json.MarshalIndent(taxes, "", "")
 
 	if err != nil {
-		fmt.Errorf("failed to stringfy json: %v", taxes)
-		os.Exit(1)
+		checkError(fmt.Sprintf("failed to stringfy json: %v", taxes))
 	}
 
 	return strings.ReplaceAll(string(jsonTaxes), newLineByOs(), "")
 }
 
 func (op Operation) buy(wallet *stockWallet) {
+
+	if wallet.AccumulatedQuantity == 0.0 { // reset the loss/profit
+		wallet.Difference = 0.0
+	}
 
 	wallet.AverageStockValue = ((float64(wallet.AccumulatedQuantity) * wallet.AverageStockValue) + (float64(op.Quantity) * op.StockValue)) / (float64(wallet.AccumulatedQuantity + op.Quantity))
 
@@ -161,18 +159,21 @@ func (op Operation) buy(wallet *stockWallet) {
 func (op Operation) sell(wallet *stockWallet) float64 {
 
 	if op.Quantity > wallet.AccumulatedQuantity {
-		fmt.Errorf("quantity is greater than accumulated quantity!")
-		os.Exit(1)
+		checkError("quantity is greater than accumulated quantity!")
 	}
 
 	wallet.AccumulatedQuantity = wallet.AccumulatedQuantity - op.Quantity
+
+	if wallet.AccumulatedQuantity == 0.0 {
+		wallet.Difference = 0.0
+	}
 
 	return calculateTax(op, wallet)
 }
 
 func calculateTax(op Operation, wallet *stockWallet) float64 {
 
-	sellOperationValue := float64(op.Quantity) * op.StockValue
+	sellOperationValue := float64(op.Quantity) * op.StockValue 
 
 	difference := sellOperationValue - (float64(op.Quantity) * wallet.AverageStockValue)
 
@@ -190,4 +191,9 @@ func calculateTax(op Operation, wallet *stockWallet) float64 {
 
 func roundToTwoDecimals(value float64) float64 {
 	return math.Round(value*100) / 100
+}
+
+func checkError(message string) {
+	fmt.Errorf(message)
+	os.Exit(1)
 }
