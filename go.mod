@@ -1,3 +1,3 @@
-module captal-gains
+module capital-gains
 
 go 1.23.2

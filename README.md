@@ -58,7 +58,7 @@ docker run -e PROFIT_PERCENTAGE=0.30 -e MAX_SELL_OPERATION_VALUE=25000.0 -i capi
 
 Run the tests:
 ```Bash
-
+go test ./...
 `````
 
 ## Decisões Arquiteturais
@@ -74,4 +74,9 @@ Outra foi mais pessoal de utilizar uma linguagem que não é tanto a minha zona 
 
  - Sem dúvidas por utilizar apenas bibliotecas da própria linguagem, lidar com decoding/encoding foi desafiador, mas interessante de fazer funcionar!
  - Como lidar com floats para valores financeiros em Go? Resolvi utilizar o float64 por ser uma aplicação não produtiva e evitar o uso por enquanto de libs externas.
- - Pensar em uma estrutura que suporte mais de uma ação. `Esse não foi um requisito, mas achei válido essa extensibilidade`
+ - Padrão de projeto/arquitetural a ser utilizado
+ - Pensar em uma estrutura que futuramente suporte mais de uma ação. `Esse não foi um requisito, mas achei válido essa extensibilidade`
+
+ ### Não fiz mas seria importante
+
+ - Pensar numa estrutura de teste de integração para apps que não são web, vi exemplo no projeto CLI `kubectl` que usa go, mas não tive tempo de aprofundar
