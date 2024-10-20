@@ -56,7 +56,7 @@ docker run -i capital-gains < input.txt
 docker run -e PROFIT_PERCENTAGE=0.30 -e MAX_SELL_OPERATION_VALUE=25000.0 -i capital-gains < input.txt
 ```
 
-Run the tests:
+Rodando os testes:
 ```Bash
 go test ./...
 `````

@@ -35,7 +35,7 @@ func (op *OperationModel) Buy() {
 	}
 
 	op.Wallet.AverageStockValue = ((float64(op.Wallet.AccumulatedQuantity) * op.Wallet.AverageStockValue) + (float64(op.Quantity) * op.StockValue)) / (float64(op.Wallet.AccumulatedQuantity + op.Quantity))
-	//500 * 20.0 + 10.0 * 1000.0 / 1500 = 
+
 	op.Wallet.AccumulatedQuantity = op.Wallet.AccumulatedQuantity + op.Quantity
 }
 
